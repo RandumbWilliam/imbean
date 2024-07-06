@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from "express";
 import { Container } from "typedi";
 import { AuthService } from "../services/auth.service";
 import { User } from "../interfaces/users.interface";
-import { RequestWithUser } from "interfaces/auth.interface";
 
 export class AuthController {
   public auth = Container.get(AuthService);
@@ -33,11 +32,7 @@ export class AuthController {
     }
   };
 
-  public logOut = async (
-    req: RequestWithUser,
-    res: Response,
-    next: NextFunction,
-  ) => {
+  public logOut = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userData = req.user;
       const logOutUserData: User = await this.auth.logout(userData);

@@ -1,13 +1,10 @@
-import { NextFunction, Response } from "express";
+import { NextFunction, Response, Request } from "express";
 import { verify } from "jsonwebtoken";
 import { HttpException } from "../exceptions/HttpException";
-import {
-  DataStoredInToken,
-  RequestWithUser,
-} from "../interfaces/auth.interface";
+import { DataStoredInToken } from "../interfaces/auth.interface";
 import { UserModel } from "../models/users.model";
 
-const getAuthorization = (req: RequestWithUser) => {
+const getAuthorization = (req: Request) => {
   const cookie = req.cookies["Authorization"];
   if (cookie) return cookie;
 
@@ -18,7 +15,7 @@ const getAuthorization = (req: RequestWithUser) => {
 };
 
 export const AuthMiddleware = async (
-  req: RequestWithUser,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
