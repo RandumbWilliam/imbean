@@ -54,4 +54,13 @@ export class AuthService {
 
     return { cookie, user: findUser };
   }
+
+  public async logout(userData: User): Promise<User> {
+    const findUser: User | null = await UserModel.findOne({
+      email: userData.email,
+    });
+    if (!findUser) throw new HttpException(409, "Accoutn does not exist.");
+
+    return findUser;
+  }
 }
