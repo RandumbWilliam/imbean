@@ -13,11 +13,11 @@ export class MessageController {
     try {
       const { message } = req.body;
       const { receiverId } = req.params;
-      const { _id: senderId } = req.user;
-
-      if (!senderId) {
+      if (!req.authUser || !req.authUser._id) {
         return res.status(401);
       }
+
+      const { _id: senderId } = req.authUser;
 
       const newMessageData = await this.message.sendMessage(
         message,
@@ -28,6 +28,26 @@ export class MessageController {
       return res
         .status(201)
         .json({ data: newMessageData, message: "send message" });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getMessage = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const { id: userToChatId } = req.params;
+      if (!req.authUser || !req.authUser._id) {
+        return res.status(401);
+      }
+      const { _id: senderId } = req.authUser;
+
+      const messages = await this.message.getMessage(senderId, userToChatId);
+
+      return res.status(201).json(messages);
     } catch (error) {
       next(error);
     }

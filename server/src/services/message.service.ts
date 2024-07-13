@@ -1,4 +1,3 @@
-import { HttpException } from "exceptions/HttpException";
 import { ConversationModel } from "models/conversations.model";
 import { MessageModel } from "models/messages.model";
 import { Service } from "typedi";
@@ -33,5 +32,13 @@ export class MessageService {
     await Promise.all([conversation.save(), newMessage.save()]);
 
     return newMessage;
+  }
+
+  public async getMessage(senderId: string, userToChatId: string) {
+    const conversation = await ConversationModel.findOne({
+      participants: { $all: [senderId, userToChatId] },
+    }).populate("messages");
+
+    return conversation?.messages;
   }
 }

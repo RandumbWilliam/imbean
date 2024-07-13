@@ -14,6 +14,11 @@ export class MessageRoute implements Routes {
   }
 
   private initializeRoutes() {
+    this.router.get(
+      `${this.path}/:id`,
+      AuthMiddleware,
+      this.message.getMessage,
+    );
     this.router.post(
       `${this.path}/send/:receiverId`,
       AuthMiddleware,

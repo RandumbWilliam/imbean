@@ -30,7 +30,7 @@ export const AuthMiddleware = async (
       const findUser = await UserModel.findById(_id);
 
       if (findUser) {
-        req.user = findUser;
+        req.authUser = findUser;
         next();
       } else {
         next(new HttpException(401, "Wrong auth token."));
