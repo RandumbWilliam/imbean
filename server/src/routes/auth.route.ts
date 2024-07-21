@@ -1,9 +1,13 @@
-import { NextFunction, Router, Response } from "express";
+import { Router } from "express";
 import { Routes } from "../interfaces/routes.interface";
 import { AuthController } from "../controllers/auth.controller";
-import { CreateUserDto, LoginUserDto } from "../dtos/users.dto";
-import { ValidationMiddleware } from "../middlewares/validation.middleware";
-import { AuthMiddleware } from "middlewares/auth.middleware";
+import {
+  CreateUserDto,
+  ForgotPasswordDto,
+  LoginUserDto,
+  ResetPasswordDto,
+} from "@dtos/users.dto";
+import { ValidationMiddleware } from "@middlewares/validation.middleware";
 
 export class AuthRoute implements Routes {
   public path = "/auth";
@@ -15,16 +19,27 @@ export class AuthRoute implements Routes {
   }
 
   private initializeRoutes() {
+    this.router.get(`${this.path}/logout`, this.auth.logoutHandler);
+    this.router.get(`${this.path}/refresh`, this.auth.refreshHandler);
     this.router.post(
-      `${this.path}/signup`,
+      `${this.path}/register`,
       ValidationMiddleware(CreateUserDto),
-      this.auth.signUp,
+      this.auth.registerHandler,
     );
     this.router.post(
       `${this.path}/login`,
       ValidationMiddleware(LoginUserDto),
-      this.auth.logIn,
+      this.auth.loginHandler,
     );
-    this.router.post(`${this.path}/logout`, AuthMiddleware, this.auth.logOut);
+    this.router.post(
+      `${this.path}/password/forgot`,
+      ValidationMiddleware(ForgotPasswordDto),
+      this.auth.sendPasswordResetHandler,
+    );
+    this.router.post(
+      `${this.path}/password/reset`,
+      ValidationMiddleware(ResetPasswordDto),
+      this.auth.resetPasswordHandler,
+    );
   }
 }

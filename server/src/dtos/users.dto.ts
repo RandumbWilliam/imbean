@@ -21,3 +21,18 @@ export class LoginUserDto {
   @IsNotEmpty()
   public password: string;
 }
+
+export class ForgotPasswordDto {
+  @IsEmail()
+  public email: string;
+}
+
+export class ResetPasswordDto {
+  @IsString()
+  @IsNotEmpty()
+  public token: string;
+
+  @IsString()
+  @IsNotEmpty()
+  public password: string;
+}

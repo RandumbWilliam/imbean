@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { HttpException } from "../exceptions/HttpException";
+import { HttpException } from "@exceptions/HttpException";
+import { clearAuthCookies, REFRESH_PATH } from "@utils/cookies";
 
 export const ErrorMiddleware = (
   error: HttpException,
@@ -8,6 +9,10 @@ export const ErrorMiddleware = (
   next: NextFunction,
 ) => {
   try {
+    if (req.path === REFRESH_PATH) {
+      clearAuthCookies(res);
+    }
+
     const status: number = error.status || 500;
     const message: string = error.message || "Something went wrong";
 

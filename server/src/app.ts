@@ -1,9 +1,11 @@
 import "reflect-metadata";
 import cookieParser from "cookie-parser";
 import express from "express";
-import { dbConnection } from "./database";
-import { Routes } from "./interfaces/routes.interface";
-import { ErrorMiddleware } from "./middlewares/error.middleware";
+import { APP_ORIGIN, PORT } from "@config";
+import { dbConnection } from "@database";
+import { Routes } from "@interfaces/routes.interface";
+import { ErrorMiddleware } from "@middlewares/error.middleware";
+import cors from "cors";
 
 export class App {
   public app: express.Application;
@@ -11,7 +13,7 @@ export class App {
 
   constructor(routes: Routes[]) {
     this.app = express();
-    this.port = 4000;
+    this.port = PORT;
 
     this.connectToDatabase();
     this.initializeMiddlewares();
@@ -31,6 +33,8 @@ export class App {
 
   private initializeMiddlewares() {
     this.app.use(express.json());
+    this.app.use(express.urlencoded({ extended: true }));
+    this.app.use(cors({ origin: APP_ORIGIN, credentials: true }));
     this.app.use(cookieParser());
   }
 

@@ -1,44 +1,21 @@
-import { NextFunction, Response, Request } from "express";
-import { verify } from "jsonwebtoken";
-import { HttpException } from "../exceptions/HttpException";
-import { DataStoredInToken } from "../interfaces/auth.interface";
-import { UserModel } from "../models/users.model";
+import { RequestHandler } from "express";
+import { HttpException } from "@exceptions/HttpException";
+import { verifyToken } from "@utils/jwt";
 
-const getAuthorization = (req: Request) => {
-  const cookie = req.cookies["Authorization"];
-  if (cookie) return cookie;
+export const AuthMiddlware: RequestHandler = (req, res, next) => {
+  const accessToken = req.cookies.accessToken as string | undefined;
 
-  const header = req.header("Authorization");
-  if (header) return header.split("Bearer ")[1];
+  if (!accessToken) throw new HttpException(401, "Not authorized");
 
-  return null;
-};
+  const { error, payload } = verifyToken(accessToken);
+  if (!payload)
+    throw new HttpException(
+      401,
+      error === "jwt expired" ? "Token expired" : "Invalid token",
+    );
 
-export const AuthMiddleware = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const Authorization = getAuthorization(req);
+  req.userId = payload.userId;
+  req.sessionId = payload.sessionId;
 
-    if (Authorization) {
-      const { _id } = (await verify(
-        Authorization,
-        "keyboardcat",
-      )) as DataStoredInToken;
-      const findUser = await UserModel.findById(_id);
-
-      if (findUser) {
-        req.authUser = findUser;
-        next();
-      } else {
-        next(new HttpException(401, "Wrong auth token."));
-      }
-    } else {
-      next(new HttpException(404, "Missing auth token"));
-    }
-  } catch (error) {
-    next(new HttpException(401, "Wrong auth token"));
-  }
+  next();
 };
