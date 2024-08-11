@@ -1,18 +1,26 @@
-import "reflect-metadata";
-import cookieParser from "cookie-parser";
-import express from "express";
-import { APP_ORIGIN, PORT } from "@config";
-import { dbConnection } from "@database";
-import { Routes } from "@interfaces/routes.interface";
-import { ErrorMiddleware } from "@middlewares/error.middleware";
-import cors from "cors";
+import { logger, stream } from '@utils/logger';
+import compression from 'compression';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import express from 'express';
+import helmet from 'helmet';
+import hpp from 'hpp';
+import morgan from 'morgan';
+import 'reflect-metadata';
+
+import { APP_ORIGIN, PORT, LOG_FORMAT } from '@config';
+import { dbConnection } from '@database';
+import { Routes } from '@interfaces/routes.interface';
+import { ErrorMiddleware } from '@middlewares/error.middleware';
 
 export class App {
   public app: express.Application;
+  public env: string;
   public port: string | number;
 
   constructor(routes: Routes[]) {
     this.app = express();
+    this.env = 'development';
     this.port = PORT;
 
     this.connectToDatabase();
@@ -23,8 +31,15 @@ export class App {
 
   public listen() {
     this.app.listen(this.port, () => {
-      console.log(`Server listening on port ${this.port}`);
+      logger.info(`=================================`);
+      logger.info(`======= ENV: ${this.env} =======`);
+      logger.info(`🚀 App listening on the port ${this.port}`);
+      logger.info(`=================================`);
     });
+  }
+
+  public getServer() {
+    return this.app;
   }
 
   private async connectToDatabase() {
@@ -32,15 +47,19 @@ export class App {
   }
 
   private initializeMiddlewares() {
+    this.app.use(morgan(LOG_FORMAT, { stream }));
+    this.app.use(cors({ origin: APP_ORIGIN, credentials: true }));
+    this.app.use(hpp());
+    this.app.use(helmet());
+    this.app.use(compression());
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
-    this.app.use(cors({ origin: APP_ORIGIN, credentials: true }));
     this.app.use(cookieParser());
   }
 
   private initializeRoutes(routes: Routes[]) {
     routes.forEach((route) => {
-      this.app.use("/api", route.router);
+      this.app.use('/api', route.router);
     });
   }
 
