@@ -8,7 +8,7 @@ import hpp from 'hpp';
 import morgan from 'morgan';
 import 'reflect-metadata';
 
-import { APP_ORIGIN, PORT, LOG_FORMAT } from '@config';
+import { env } from '@config';
 import { dbConnection } from '@database';
 import { Routes } from '@interfaces/routes.interface';
 import { ErrorMiddleware } from '@middlewares/error.middleware';
@@ -20,8 +20,8 @@ export class App {
 
   constructor(routes: Routes[]) {
     this.app = express();
-    this.env = 'development';
-    this.port = PORT;
+    this.env = env.NODE_ENV;
+    this.port = env.PORT;
 
     this.connectToDatabase();
     this.initializeMiddlewares();
@@ -47,8 +47,8 @@ export class App {
   }
 
   private initializeMiddlewares() {
-    this.app.use(morgan(LOG_FORMAT, { stream }));
-    this.app.use(cors({ origin: APP_ORIGIN, credentials: true }));
+    this.app.use(morgan(env.LOG_FORMAT, { stream }));
+    this.app.use(cors({ origin: env.APP_ORIGIN, credentials: true }));
     this.app.use(hpp());
     this.app.use(helmet());
     this.app.use(compression());

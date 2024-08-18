@@ -1,7 +1,7 @@
-import { Resend } from "resend";
-import { NODE_ENV, RESEND_API_KEY, EMAIL_SENDER } from "@config";
+import { env } from '@config';
+import { Resend } from 'resend';
 
-const resend = new Resend(RESEND_API_KEY);
+const resend = new Resend(env.RESEND_API_KEY);
 
 type Params = {
   to: string;
@@ -10,11 +10,9 @@ type Params = {
   html: string;
 };
 
-const getFromEmail = () =>
-  NODE_ENV === "development" ? "onboarding@resend.dev" : EMAIL_SENDER;
+const getFromEmail = () => (env.isDev ? 'onboarding@resend.dev' : env.EMAIL_SENDER);
 
-const getToEmail = (to: string) =>
-  NODE_ENV === "development" ? "delivered@resend.dev" : to;
+const getToEmail = (to: string) => (env.isDev ? 'delivered@resend.dev' : to);
 
 export const sendMail = async ({ to, subject, text, html }: Params) =>
   await resend.emails.send({

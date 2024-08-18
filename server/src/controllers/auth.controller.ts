@@ -1,84 +1,70 @@
-import { Request, Response } from "express";
-import { Container } from "typedi";
-import { AuthService } from "@services/auth.service";
-import { catchErrors } from "@utils/catchErrors";
-import { CreateUserDto, LoginUserDto, ResetPasswordDto } from "@dtos/users.dto";
-import {
-  clearAuthCookies,
-  getAccessTokenCookieOptions,
-  getRefreshTokenCookieOptions,
-  setAuthCookies,
-} from "@utils/cookies";
-import { verifyToken } from "@utils/jwt";
-import { SessionModel } from "@models/sessions.model";
-import { HttpException } from "@exceptions/HttpException";
+import { ACCESS_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_NAME } from '@constants';
+import { CreateUserDto, ForgotPasswordDto, LoginUserDto, ResetPasswordDto } from '@dtos/users.dto';
+import { HttpException } from '@exceptions/HttpException';
+import { SessionModel } from '@models/sessions.model';
+import { AuthService } from '@services/auth.service';
+import { catchErrors } from '@utils/catchErrors';
+import { clearAuthCookies, getAccessTokenCookieOptions, getRefreshTokenCookieOptions, setAuthCookies } from '@utils/cookies';
+import { verifyAccessToken } from '@utils/jwt';
+import { Container } from 'typedi';
 
 export class AuthController {
   public auth = Container.get(AuthService);
 
-  public registerHandler = catchErrors(async (req, res, next) => {
+  public registerHandler = catchErrors(async (req, res) => {
     const userData: CreateUserDto = req.body;
+    const userAgent = req.headers['user-agent'];
 
-    const { user, accessToken, refreshToken } =
-      await this.auth.register(userData);
+    const { user, accessToken, refreshToken } = await this.auth.register(userData, userAgent);
 
-    return setAuthCookies({ res, accessToken, refreshToken })
-      .status(201)
-      .json(user);
+    return setAuthCookies({ res, accessToken, refreshToken }).status(201).json({
+      user,
+    });
   });
 
-  public loginHandler = catchErrors(async (req, res, next) => {
+  public loginHandler = catchErrors(async (req, res) => {
     const userData: LoginUserDto = req.body;
+    const userAgent = req.headers['user-agent'];
 
-    const { user, accessToken, refreshToken } = await this.auth.login(userData);
+    const { user, accessToken, refreshToken } = await this.auth.login(userData, userAgent);
 
-    return setAuthCookies({ res, accessToken, refreshToken })
-      .status(200)
-      .json(user);
+    return setAuthCookies({ res, accessToken, refreshToken }).status(200).json({
+      user,
+    });
   });
 
-  public logoutHandler = catchErrors(async (req: Request, res: Response) => {
+  public logoutHandler = catchErrors(async (req, res) => {
     const accessToken = req.cookies.accessToken as string | undefined;
-    const { payload } = verifyToken(accessToken || "");
+    const { payload } = verifyAccessToken(accessToken || '');
 
     if (payload) {
       await SessionModel.findByIdAndDelete(payload.sessionId);
     }
 
-    return clearAuthCookies(res)
-      .status(200)
-      .json({ message: "Logout successful" });
+    return clearAuthCookies(res).json({ message: 'Logout successful' });
   });
 
   public refreshHandler = catchErrors(async (req, res) => {
     const refreshToken = req.cookies.refreshToken as string | undefined;
-    if (!refreshToken) throw new HttpException(401, "Missing refresh token");
+    if (!refreshToken) throw new HttpException(401, 'Missing refresh token');
 
-    const { accessToken, newRefreshToken } =
-      await this.auth.refreshUserAccessToken(refreshToken);
+    const { accessToken, newRefreshToken } = await this.auth.refreshUserAccessToken(refreshToken);
 
     if (newRefreshToken) {
-      res.cookie(
-        "refreshToken",
-        newRefreshToken,
-        getRefreshTokenCookieOptions(),
-      );
+      res.cookie(REFRESH_TOKEN_COOKIE_NAME, newRefreshToken, getRefreshTokenCookieOptions());
     }
 
-    return res
-      .status(200)
-      .cookie("accessToken", accessToken, getAccessTokenCookieOptions())
-      .json({
-        message: "Access token refreshed",
-      });
+    return res.status(200).cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, getAccessTokenCookieOptions()).json({
+      message: 'Access token refreshed',
+    });
   });
 
   public sendPasswordResetHandler = catchErrors(async (req, res) => {
-    const { email } = req.body;
+    const { email }: ForgotPasswordDto = req.body;
 
     await this.auth.sendPasswordResetEmail(email);
 
-    return res.status(200).json({ message: "Password reset email sent" });
+    return res.status(200).json({ message: 'Password reset email sent' });
   });
 
   public resetPasswordHandler = catchErrors(async (req, res) => {
@@ -86,8 +72,6 @@ export class AuthController {
 
     await this.auth.resetPassword(resetPasswordData);
 
-    return clearAuthCookies(res)
-      .status(200)
-      .json({ message: "Password reset successful" });
+    return clearAuthCookies(res).status(200).json({ message: 'Password reset successful' });
   });
 }

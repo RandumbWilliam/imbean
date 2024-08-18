@@ -1,12 +1,15 @@
-import { connect } from "mongoose";
-import { DB_URI } from "@config";
+import { env } from '@config';
+import { connect, set } from 'mongoose';
 
 export const dbConnection = async () => {
-  try {
-    await connect(DB_URI);
-    console.log("Connected to database");
-  } catch (error) {
-    console.log("Could not connect to database", error);
-    process.exit(1);
+  const dbConfig = {
+    url: `mongodb://${env.DB_HOST}:${env.DB_PORT}/${env.DB_DATABASE}`,
+    options: {},
+  };
+
+  if (env.isDev) {
+    set('debug', true);
   }
+
+  await connect(dbConfig.url, dbConfig.options);
 };
